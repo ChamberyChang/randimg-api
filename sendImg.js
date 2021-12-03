@@ -1,22 +1,22 @@
 import _, { random } from 'lodash';
 import { getLocalReverseProxyURL } from './pximg';
 import { URL } from 'url';
-import './utils/jimp.plugin';
+import './jimpPlugin';
 import Jimp from 'jimp';
 const Axios = require('./axiosProxy');
 
-const API_URL = 'https://api.lolicon.app/setu/v2'; //A public pixiv image dataset api
+const API_URL = global.config.sendImg.url;; //A public pixiv image dataset api
 
 const PIXIV_404 = Symbol('Pixiv image 404'); //when 404 is returned
 
 async function imgAntiShielding(url) {
-  const setting = global.config.setu;
+  const setting = global.config.sendImg;
   const proxy = setting.pximgProxy.trim();
   const img = await Jimp.read(
     proxy ? Buffer.from(await Axios.get(url, { responseType: 'arraybuffer' }).then(r => r.data)) : url
   );
 
-  switch (Number(global.config.setu.antiShielding)) {
+  switch (Number(global.config.sendImg.antiShielding)) {
     case 1:
       const [w, h] = [img.getWidth(), img.getHeight()];
       const pixels = [
@@ -56,14 +56,14 @@ async function getAntiShieldingBase64(url, fallbackUrl) {
 }
 
 function sendImg(context, at = true) {
-  const setuRegExec = context.message;
-  if (!setuRegExec) return false;
+  const sendImgRegExec = context.message;
+  if (!sendImgRegExec) return false;
 
-  const setting = global.config.setu;
+  const setting = global.config.sendImg;
   const proxy = setting.pximgProxy.trim();
   const isGroupMsg = context.message_type === 'group';
 
-  const regGroup = setuRegExec.groups || {};
+  const regGroup = sendImgRegExec.groups || {};
   const r18 = regGroup.r18 && !(isGroupMsg && setting.r18OnlyInWhite && !setting.whiteGroup.includes(context.group_id));
   const keyword = regGroup.keyword ? regGroup.keyword.split('&') : undefined;
 
@@ -74,9 +74,9 @@ function sendImg(context, at = true) {
       if (ret.error) return global.replyMsg(context, ret.error, at);
       if (!ret.data.length) return global.replyMsg(context, 'No results', at);
 
-      const setu = ret.data[0];
-      const setuUrl = setting.size1200 ? setu.urls.regular : setu.urls.original;
-      const urlMsgs = [`https://pixiv.net/i/${setu.pid} (p${setu.p})`];
+      const sendImg = ret.data[0];
+      const sendImgUrl = setting.size1200 ? sendImg.urls.regular : sendImg.urls.original;
+      const urlMsgs = [`https://pixiv.net/i/${sendImg.pid} (p${sendImg.p})`];
 
       if (
         r18 &&
@@ -89,9 +89,9 @@ function sendImg(context, at = true) {
       }
       global.replyMsg(context, urlMsgs.join('\n'), at);
 
-      const getReqUrl = url => (proxy ? getSetuUrlByTemplate(proxy, setu, url) : getLocalReverseProxyURL(url));
-      const url = getReqUrl(setuUrl);
-      const fallbackUrl = setting.size1200 ? undefined : getReqUrl(setu.urls.regular);
+      const getReqUrl = url => (proxy ? getImgUrlByTemplate(proxy, sendImg, url) : getLocalReverseProxyURL(url));
+      const url = getReqUrl(sendImgUrl);
+      const fallbackUrl = setting.size1200 ? undefined : getReqUrl(sendImg.urls.regular);
 
       // 反和谐
       const base64 =
@@ -112,6 +112,8 @@ function sendImg(context, at = true) {
         return;
       }
 
+      const imgType = delTime === -1 ? 'flash' : null;
+
       success = true;
     })
     .catch(e => {
@@ -128,8 +130,8 @@ function sendImg(context, at = true) {
 
 export default sendImg;
 
-function getSetuUrlByTemplate(tpl, setu, url) {
+function getImgUrlByTemplate(tpl, sendImg, url) {
   const path = new URL(url).pathname.replace(/^\//, '');
   if (!/{{.+}}/.test(tpl)) return new URL(path, tpl).href;
-  return _.template(tpl, { interpolate: /{{([\s\S]+?)}}/g })({ path, ..._.pick(setu, ['pid', 'p', 'uid', 'ext']) });
+  return _.template(tpl, { interpolate: /{{([\s\S]+?)}}/g })({ path, ..._.pick(sendImg, ['pid', 'p', 'uid', 'ext']) });
 }

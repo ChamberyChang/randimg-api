@@ -16,6 +16,8 @@
   "sendImg": {
     // 是否启用
     "enable": false,
+    // API URL
+    "url": "",
     // 反和谐方式（0：关闭，1：轻微修改，2：旋转）
     "antiShielding": 0,
     // P站图本地反代服务主机，可以手动指定，一般不需要动，详见 wiki

@@ -35,7 +35,7 @@ router.get('/', ctx => {
 app.use(router.routes()).use(router.allowedMethods());
 
 async function startProxy() {
-  const setting = global.config.bot.setu;
+  const setting = global.config.sendImg;
   const serverConfig = {
     host: setting.pximgServerHost || '127.0.0.1',
     port: setting.pximgServerPort || 0,
