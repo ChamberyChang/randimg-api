@@ -22,7 +22,7 @@ try {
   if (code === 'ENOENT') {
     console.error(`ERROR: Configuration JSON not found ${e.path}${EOL}`);
   } else if (message && message.includes('JSON')) {
-    console.error(`ERROR: Configuration JSON is format error\n${message}${EOL}`);
+    console.error(`ERROR: Configuration JSON has format error\n${message}${EOL}`);
   } else console.error(e);
   process.exit(1);
 }
